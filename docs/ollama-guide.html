@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ollama 安裝與使用指南 — Paul 專案</title>
+<style>
+  :root {
+    --accent: #0f766e;
+    --accent-light: #ccfbf1;
+    --ink: #1f2937;
+    --muted: #6b7280;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --code-bg: #0f172a;
+    --code-ink: #e2e8f0;
+    --warn-bg: #fffbeb;
+    --warn-border: #f59e0b;
+    --ok-bg: #f0fdf4;
+    --ok-border: #22c55e;
+    --bad-bg: #fef2f2;
+    --bad-border: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC",
+                 "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.75;
+  }
+  header {
+    background: linear-gradient(135deg, #134e4a, #0f766e);
+    color: #fff;
+    padding: 48px 24px 40px;
+    text-align: center;
+  }
+  header h1 { margin: 0 0 8px; font-size: 1.9rem; }
+  header p { margin: 0; opacity: .85; }
+  main { max-width: 920px; margin: 0 auto; padding: 32px 20px 64px; }
+  nav.toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 32px;
+  }
+  nav.toc ol { margin: 8px 0 4px; padding-left: 24px; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 28px;
+  }
+  h2 {
+    margin-top: 0;
+    font-size: 1.35rem;
+    border-left: 5px solid var(--accent);
+    padding-left: 12px;
+  }
+  h3 { font-size: 1.08rem; margin: 24px 0 8px; }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, "Courier New", monospace;
+    background: #eef2f7;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: .9em;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 10px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-size: .86rem;
+    line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+  pre .c { color: #64748b; }   /* 註解 */
+  pre .p { color: #5eead4; }   /* 提示符 / 重點 */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .93rem; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; }
+  .callout { border-radius: 10px; padding: 14px 18px; margin: 16px 0; border-left: 5px solid; }
+  .callout.warn { background: var(--warn-bg); border-color: var(--warn-border); }
+  .callout.ok   { background: var(--ok-bg);   border-color: var(--ok-border); }
+  .callout.bad  { background: var(--bad-bg);  border-color: var(--bad-border); }
+  .callout > strong { display: block; margin-bottom: 4px; }
+  .badge {
+    display: inline-block; border-radius: 999px; padding: 0 10px;
+    font-size: .8rem; font-weight: 600; line-height: 1.7; white-space: nowrap;
+  }
+  .badge.ok  { background: var(--ok-bg);  color: #15803d; border: 1px solid var(--ok-border); }
+  .badge.bad { background: var(--bad-bg); color: #b91c1c; border: 1px solid var(--bad-border); }
+  .badge.wip { background: var(--warn-bg); color: #b45309; border: 1px solid var(--warn-border); }
+  .diagram { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+  .diagram .box {
+    border: 2px solid var(--accent); border-radius: 10px;
+    padding: 12px 16px; background: var(--accent-light);
+  }
+  .diagram .box.outer { background: #f8fafc; border-style: dashed; }
+  .diagram .box h4 { margin: 0 0 6px; font-size: .98rem; }
+  .diagram .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .diagram .row .box { flex: 1 1 260px; }
+  .diagram .arrow { text-align: center; color: var(--muted); font-size: .9rem; }
+  .diagram ul { margin: 4px 0; padding-left: 20px; font-size: .9rem; }
+  footer { text-align: center; color: var(--muted); font-size: .85rem; padding-bottom: 40px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Ollama 安裝與使用指南</h1>
+  <p>Paul 專案 ・ 雲端沙箱環境 ・ 2026-06-11</p>
+</header>
+
+<main>
+
+<nav class="toc">
+  <strong>目錄</strong>
+  <ol>
+    <li><a href="#where">重要澄清:裝在哪裡?</a></li>
+    <li><a href="#installed">安裝了什麼</a></li>
+    <li><a href="#design">環境架構設計</a></li>
+    <li><a href="#usage">之後如何使用 Ollama</a></li>
+    <li><a href="#training">「訓練」模型:Ollama 能做與不能做的事</a></li>
+    <li><a href="#examples">可直接複製的範例</a></li>
+    <li><a href="#status">目前狀態與待辦事項</a></li>
+  </ol>
+</nav>
+
+<section id="where">
+  <h2>1. 重要澄清:裝在哪裡?</h2>
+  <div class="callout warn">
+    <strong>⚠️ Ollama 並沒有安裝在「你的電腦」上</strong>
+    這次的安裝發生在 <b>Claude Code 的雲端沙箱容器</b>裡 —— 一台暫時性的 Linux 虛擬環境。
+    你的個人電腦完全沒有被改動。
+  </div>
+  <p>這代表兩件事:</p>
+  <ul>
+    <li><b>容器是暫時的</b>:閒置一段時間後容器會被回收,裝好的 Ollama 與下載的模型都會消失。
+        因此我把「一鍵重裝腳本」<code>scripts/ollama-up.sh</code> 放進了 Git 倉庫,
+        之後任何新的沙箱階段執行一次即可還原環境。</li>
+    <li><b>沙箱碰不到你電腦上的 Ollama</b>:如果你想連的是自己電腦上跑的
+        <code>localhost:11434</code>,雲端容器無法直接連線。
+        不過倉庫裡的所有腳本在你自己的電腦上同樣可以直接使用(見第 4 節)。</li>
+  </ul>
+</section>
+
+<section id="installed">
+  <h2>2. 安裝了什麼</h2>
+  <table>
+    <tr><th>項目</th><th>位置</th><th>說明</th></tr>
+    <tr>
+      <td><b>Ollama v0.30.7</b>(執行檔)</td>
+      <td><code>/usr/local/bin/ollama</code></td>
+      <td>從官方 GitHub Releases 下載(1.39 GB 壓縮檔),<b>已用官方 sha256 校驗碼驗證</b>。</td>
+    </tr>
+    <tr>
+      <td>Ollama 函式庫</td>
+      <td><code>/usr/local/lib/ollama</code>(約 2.1 GB)</td>
+      <td>推論用的執行期函式庫(含 CPU 與 GPU 後端;此沙箱無 GPU,以 CPU 推論)。</td>
+    </tr>
+    <tr>
+      <td>Ollama 伺服器(執行中)</td>
+      <td><code>http://127.0.0.1:11434</code></td>
+      <td>以 <code>ollama serve</code> 於背景啟動,REST API 已驗證可連線。日誌在 <code>/tmp/ollama-serve.log</code>。</td>
+    </tr>
+    <tr>
+      <td><code>zstd</code> 解壓工具</td>
+      <td>系統套件(apt)</td>
+      <td>解壓 <code>.tar.zst</code> 安裝包所需。</td>
+    </tr>
+  </table>
+
+  <h3>同時提交進 Git 倉庫的檔案(分支 <code>claude/brave-thompson-cjo4c7</code>)</h3>
+  <table>
+    <tr><th>檔案</th><th>用途</th></tr>
+    <tr><td><code>scripts/ollama-up.sh</code></td>
+        <td>一鍵安裝 + 啟動腳本。可重複執行(已裝就跳過、已啟動就只回報狀態)。</td></tr>
+    <tr><td><code>ollama_client.py</code></td>
+        <td>零相依的 Python 客戶端(只用標準函式庫),支援 <code>--check</code> 連線檢查與對話。</td></tr>
+    <tr><td><code>README.md</code></td>
+        <td>英文版快速說明。</td></tr>
+    <tr><td><code>docs/ollama-guide.html</code></td>
+        <td>本說明文件。</td></tr>
+  </table>
+</section>
+
+<section id="design">
+  <h2>3. 環境架構設計</h2>
+
+  <div class="diagram">
+    <div class="box outer">
+      <h4>☁️ Claude Code 雲端沙箱(暫時性 Linux 容器,4 CPU / 15 GB RAM,無 GPU)</h4>
+      <div class="row">
+        <div class="box">
+          <h4>📁 Git 倉庫 /home/user/Paul</h4>
+          <ul>
+            <li>ollama_client.py(API 客戶端)</li>
+            <li>scripts/ollama-up.sh(重建環境)</li>
+            <li>docs/ollama-guide.html(本文件)</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h4>⚙️ Ollama 伺服器</h4>
+          <ul>
+            <li>ollama serve @ 127.0.0.1:11434</li>
+            <li>REST API:/api/chat、/api/generate…</li>
+            <li>模型庫:目前為空(見第 7 節)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="arrow">客戶端 ⇄ 伺服器 之間走本機 HTTP(由環境變數 <code>OLLAMA_HOST</code> 決定位址)</div>
+    </div>
+    <div class="arrow">▼ 對外連線(由環境「網路政策」控管)</div>
+    <div class="box outer">
+      <h4>🌐 網路政策(本沙箱目前的設定)</h4>
+      <ul>
+        <li><span class="badge ok">✅ 允許</span> github.com、*.githubusercontent.com(因此能從 GitHub Releases 安裝)</li>
+        <li><span class="badge bad">❌ 封鎖</span> ollama.com(官方安裝程式)</li>
+        <li><span class="badge bad">❌ 封鎖</span> registry.ollama.ai(<code>ollama pull</code> 模型下載來源)</li>
+        <li><span class="badge bad">❌ 封鎖</span> huggingface.co(GGUF 模型檔來源)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>設計上的取捨</h3>
+  <ul>
+    <li><b>改從 GitHub Releases 安裝</b>:官方建議的 <code>curl https://ollama.com/install.sh | sh</code>
+        在此網路政策下會被擋,所以腳本直接抓 GitHub 上的官方發行檔,並比對官方 sha256 確保完整性。</li>
+    <li><b>沿用 <code>OLLAMA_HOST</code> 慣例</b>:腳本與客戶端都讀同一個環境變數(預設
+        <code>127.0.0.1:11434</code>),與 ollama CLI 行為一致 —— 同一份程式碼在沙箱、你的電腦、
+        或遠端伺服器上都不用改。</li>
+    <li><b>客戶端零相依</b>:<code>ollama_client.py</code> 只用 Python 標準函式庫,
+        不需要 <code>pip install</code> 任何東西,在受限環境也能直接跑。</li>
+    <li><b>腳本可重複執行(冪等)</b>:容器是暫時的,所以把「環境」寫成程式碼放進倉庫,
+        而不是依賴手動安裝的狀態。</li>
+  </ul>
+</section>
+
+<section id="usage">
+  <h2>4. 之後如何使用 Ollama</h2>
+
+  <h3>情境 A:在你自己的電腦上(建議,可下載模型、速度也快)</h3>
+<pre><code><span class="c"># 1. 安裝(macOS / Windows 直接到 https://ollama.com 下載安裝程式;Linux:)</span>
+curl -fsSL https://ollama.com/install.sh | sh
+
+<span class="c"># 2. 下載一個模型(llama3.2 約 2GB,qwen2.5:0.5b 約 400MB 適合低配機器)</span>
+ollama pull llama3.2
+
+<span class="c"># 3. 直接在終端機對話</span>
+ollama run llama3.2
+
+<span class="c"># 4. 或用本倉庫的 Python 客戶端(桌面版 Ollama 通常已自動在背景執行)</span>
+python3 ollama_client.py --check
+python3 ollama_client.py "用一句話介紹你自己"</code></pre>
+
+  <h3>情境 B:在這個雲端沙箱裡</h3>
+<pre><code><span class="c"># 每次開新的沙箱階段,先重建環境(已裝過就只會回報狀態)</span>
+./scripts/ollama-up.sh
+
+<span class="c"># 確認連線</span>
+python3 ollama_client.py --check
+<span class="p"># → Connected to Ollama 0.30.7 at http://127.0.0.1:11434</span></code></pre>
+  <div class="callout warn">
+    <strong>要在沙箱裡下載模型,需先放行網域</strong>
+    到 Claude Code 的環境設定(Environment → Network policy)把
+    <code>ollama.com</code> 與 <code>registry.ollama.ai</code> 加入允許清單,
+    之後 <code>ollama pull qwen2.5:0.5b</code> 就能正常運作。
+    文件:<a href="https://code.claude.com/docs/en/claude-code-on-the-web">code.claude.com/docs/en/claude-code-on-the-web</a>
+  </div>
+
+  <h3>常用 CLI 指令速查</h3>
+  <table>
+    <tr><th>指令</th><th>作用</th></tr>
+    <tr><td><code>ollama pull &lt;模型&gt;</code></td><td>下載模型(如 <code>llama3.2</code>、<code>qwen2.5:7b</code>)</td></tr>
+    <tr><td><code>ollama run &lt;模型&gt;</code></td><td>互動式對話(沒下載過會自動先 pull)</td></tr>
+    <tr><td><code>ollama list</code></td><td>列出已安裝的模型</td></tr>
+    <tr><td><code>ollama ps</code></td><td>查看目前載入記憶體中的模型</td></tr>
+    <tr><td><code>ollama show &lt;模型&gt;</code></td><td>查看模型資訊(參數量、模板、授權)</td></tr>
+    <tr><td><code>ollama rm &lt;模型&gt;</code></td><td>刪除模型釋放空間</td></tr>
+    <tr><td><code>ollama create &lt;名稱&gt; -f Modelfile</code></td><td>用 Modelfile 建立自訂模型(見第 5 節)</td></tr>
+  </table>
+</section>
+
+<section id="training">
+  <h2>5. 「訓練」模型:Ollama 能做與不能做的事</h2>
+  <div class="callout bad">
+    <strong>先講清楚:Ollama 本身是「推論引擎」,不做訓練(fine-tuning)</strong>
+    它負責下載、管理、執行模型。真正的微調要用其他工具完成,再把成果匯入 Ollama 使用。
+  </div>
+
+  <h3>路線 1|Modelfile 客製化(最簡單,不需要 GPU,幾秒鐘完成)</h3>
+  <p>不改變模型權重,而是固定系統提示詞與參數,打造一個「角色化」的模型。建立檔案 <code>Modelfile</code>:</p>
+<pre><code>FROM llama3.2
+PARAMETER temperature 0.7
+PARAMETER num_ctx 4096
+SYSTEM """你是 Paul 的專屬助理,一律使用繁體中文回答,語氣簡潔友善。"""</code></pre>
+<pre><code>ollama create paul-assistant -f Modelfile
+ollama run paul-assistant "幫我寫一封請假信"</code></pre>
+
+  <h3>路線 2|真正的微調(LoRA / QLoRA)→ 匯出 GGUF → 匯入 Ollama</h3>
+  <p>適合想讓模型學會特定領域知識或語氣的情況。典型流程:</p>
+  <ol>
+    <li><b>準備資料集</b>:整理成「指令 → 回答」的 JSONL 格式,通常數百~數千筆。</li>
+    <li><b>用微調框架訓練</b>(需要 GPU,可用 Google Colab 免費額度):
+        <a href="https://github.com/unslothai/unsloth">Unsloth</a>(最容易上手,有現成 Colab 筆記本)、
+        <a href="https://github.com/hiyouga/LLaMA-Factory">LLaMA-Factory</a>(有網頁介面)、
+        <a href="https://github.com/axolotl-ai-cloud/axolotl">Axolotl</a>。</li>
+    <li><b>匯出成 GGUF 檔</b>:Unsloth 可直接 <code>model.save_pretrained_gguf(...)</code>,
+        或用 llama.cpp 的 <code>convert_hf_to_gguf.py</code> 轉換。</li>
+    <li><b>匯入 Ollama</b>:
+<pre><code><span class="c"># Modelfile 直接指向你的 GGUF 檔</span>
+FROM ./my-finetuned-model.Q4_K_M.gguf</code></pre>
+<pre><code>ollama create my-model -f Modelfile
+ollama run my-model</code></pre></li>
+  </ol>
+
+  <h3>路線 3|不訓練,用 RAG(檢索增強)</h3>
+  <p>如果目的是「讓模型回答我的文件內容」,通常不需要微調 ——
+     把文件切段、向量化存入資料庫,查詢時把相關段落塞進提示詞即可。
+     Ollama 內建嵌入 API(<code>/api/embed</code>,搭配 <code>nomic-embed-text</code> 等模型),
+     可以與 LangChain、LlamaIndex 或自寫的簡單腳本搭配。成本與難度都遠低於微調,建議先試這條路。</p>
+</section>
+
+<section id="examples">
+  <h2>6. 可直接複製的範例</h2>
+
+  <h3>REST API:curl</h3>
+<pre><code><span class="c"># 單輪生成</span>
+curl http://127.0.0.1:11434/api/generate -d '{
+  "model": "llama3.2",
+  "prompt": "為什麼天空是藍色的?",
+  "stream": false
+}'
+
+<span class="c"># 多輪對話</span>
+curl http://127.0.0.1:11434/api/chat -d '{
+  "model": "llama3.2",
+  "messages": [
+    {"role": "system", "content": "你是一位繁體中文助理。"},
+    {"role": "user", "content": "推薦三本程式設計入門書"}
+  ],
+  "stream": false
+}'</code></pre>
+
+  <h3>Python:用本倉庫的 <code>ollama_client.py</code> 寫一個迷你聊天機器人</h3>
+<pre><code>from ollama_client import chat, models
+
+model = models()[0]                      <span class="c"># 取第一個已安裝的模型</span>
+print(f"使用模型:{model}(輸入 exit 離開)")
+
+while True:
+    text = input("你:").strip()
+    if text in ("exit", "quit"):
+        break
+    print("AI:", chat(text, model, system="請一律使用繁體中文回答。"))</code></pre>
+
+  <h3>Python:官方套件(功能更完整,支援串流)</h3>
+<pre><code>pip install ollama</code></pre>
+<pre><code>import ollama
+
+for part in ollama.chat(
+    model="llama3.2",
+    messages=[{"role": "user", "content": "講一個冷笑話"}],
+    stream=True,
+):
+    print(part["message"]["content"], end="", flush=True)</code></pre>
+
+  <h3>JavaScript(Node.js / 瀏覽器 fetch)</h3>
+<pre><code>const res = await fetch("http://127.0.0.1:11434/api/chat", {
+  method: "POST",
+  body: JSON.stringify({
+    model: "llama3.2",
+    messages: [{ role: "user", content: "Hello!" }],
+    stream: false,
+  }),
+});
+const data = await res.json();
+console.log(data.message.content);</code></pre>
+</section>
+
+<section id="status">
+  <h2>7. 目前狀態與待辦事項</h2>
+  <table>
+    <tr><th>項目</th><th>狀態</th><th>說明 / 需要你做的事</th></tr>
+    <tr>
+      <td>Ollama 伺服器(沙箱內)</td>
+      <td><span class="badge ok">✅ 運行中</span></td>
+      <td>v0.30.7,API 連線已驗證(<code>/api/version</code>、<code>/api/tags</code> 均正常)。</td>
+    </tr>
+    <tr>
+      <td>連線工具(腳本 + 客戶端)</td>
+      <td><span class="badge ok">✅ 已測試</span></td>
+      <td>已對著運行中的伺服器實測通過,並 commit 在分支 <code>claude/brave-thompson-cjo4c7</code>。</td>
+    </tr>
+    <tr>
+      <td>推送到 GitHub</td>
+      <td><span class="badge bad">❌ 被拒(403)</span></td>
+      <td>此工作階段對 <code>paulchang3/Paul</code> 沒有寫入權限。請到 GitHub →
+          Settings → Integrations → Applications,確認 Claude GitHub App 對此倉庫有
+          <b>讀寫</b>權限,完成後告訴我再推送一次。<b>容器被回收前若未推送,commit 會遺失。</b></td>
+    </tr>
+    <tr>
+      <td>下載模型(沙箱內)</td>
+      <td><span class="badge wip">⚠️ 待開通</span></td>
+      <td>網路政策封鎖了 <code>registry.ollama.ai</code>。在環境設定中放行
+          <code>ollama.com</code> 與 <code>registry.ollama.ai</code> 後即可
+          <code>ollama pull</code>。</td>
+    </tr>
+    <tr>
+      <td>GPU 加速(沙箱內)</td>
+      <td><span class="badge wip">— 無 GPU</span></td>
+      <td>沙箱為 4 核 CPU / 15 GB RAM,適合跑 0.5B~3B 的小模型;大模型建議在自己的電腦跑。</td>
+    </tr>
+  </table>
+</section>
+
+<footer>
+  Paul 專案 ・ Ollama 環境說明 ・ 產生於 2026-06-11
+</footer>
+
+</main>
+</body>
+</html>
