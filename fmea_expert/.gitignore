@@ -1,0 +1,4 @@
+# 你的 Word 文件(可能含公司機密)與產生的知識庫,預設不進版控
+my_docs/
+knowledge.json
+__pycache__/

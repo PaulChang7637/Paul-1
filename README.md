@@ -4,6 +4,10 @@ Small toolkit for talking to an [Ollama](https://ollama.com) server on
 `localhost`, plus a setup script that also works inside Claude Code cloud
 sandboxes.
 
+> **想用自己的 Word 文件打造本機 AI 專家?** 完整逐步範例在
+> [`fmea_expert/`](fmea_expert/README.md):ISO 14971 FMEA 風險管理計算專家
+> (自訂 Ollama 模型 + Word 文件 RAG 知識庫,可在任何 .py 程式中呼叫)。
+
 ## Quick start
 
 ```sh
