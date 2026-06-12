@@ -8,6 +8,11 @@ sandboxes.
 > [`fmea_expert/`](fmea_expert/README.md):ISO 14971 FMEA 風險管理計算專家
 > (自訂 Ollama 模型 + Word 文件 RAG 知識庫,可在任何 .py 程式中呼叫)。
 
+**導覽**:[檔案索引 INDEX.md](INDEX.md) ・
+[GitHub 整理指南](docs/github-organization-guide.md)(命名/編碼/分類/連結規則)・
+[Ollama 環境說明(HTML)](docs/ollama-guide.html) ・
+每月 1 日自動執行[整理工作流程](.github/workflows/monthly-tidy.yml)並開報告 Issue。
+
 ## Quick start
 
 ```sh

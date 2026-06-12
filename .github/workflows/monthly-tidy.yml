@@ -1,0 +1,49 @@
+# 每月自動整理:更新檔案索引 + 開一張整理報告 Issue
+#
+# 觸發時機:
+#   - 每月 1 日 09:00(台北時間,UTC 01:00)自動執行
+#   - 也可隨時到 Actions 頁面 → monthly-tidy → Run workflow 手動執行
+#
+# 注意:公開倉庫若超過 60 天沒有任何活動,GitHub 會自動停用排程,
+# 收到通知信時到 Actions 頁面點一下重新啟用即可。
+name: monthly-tidy
+
+on:
+  schedule:
+    - cron: "0 1 1 * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 取得完整歷史,才能算出每個檔案的最後更新日期
+
+      - name: 執行整理腳本
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/tidy_repo.py > report.md
+
+      - name: 提交更新後的 INDEX.md
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add INDEX.md
+          git diff --cached --quiet || {
+            git commit -m "chore: 每月自動更新檔案索引"
+            git push
+          }
+
+      - name: 開立每月整理報告 Issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "📋 每月整理報告 $(date +%Y-%m)" \
+            --body-file report.md
